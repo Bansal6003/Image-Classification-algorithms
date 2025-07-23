@@ -18,7 +18,7 @@ from torchvision import models
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Define transformations
+# Transformations
 transform = transforms.Compose([
     transforms.Resize((384, 384)),
     transforms.Grayscale(num_output_channels=3),
@@ -31,7 +31,7 @@ class CustomInceptionV3(nn.Module):
         super(CustomInceptionV3, self).__init__()
         self.inception = models.inception_v3(pretrained=True, aux_logits=aux_logits)
         
-        # Modify the final fully connected layer to output the correct number of classes
+        # Final fully connected layer to output the correct number of classes
         self.inception.fc = nn.Sequential(
             nn.Linear(self.inception.fc.in_features, 256),
             nn.ReLU(),
@@ -40,9 +40,8 @@ class CustomInceptionV3(nn.Module):
         )
 
     def forward(self, x):
-        # Return only the main output during torch.jit scripting
         if torch.jit.is_scripting() or torch.jit.is_tracing():
-            return self.inception(x).logits  # Only return the main logits
+            return self.inception(x).logits  
         else:
             return self.inception(x)
 
@@ -51,14 +50,14 @@ class ModelLoader:
     def __init__(self, model_path, class_names, num_classes=4):
         super(ModelLoader, self).__init__()
         self.model_path = model_path
-        self.class_names = class_names  # Initialize class names
+        self.class_names = class_names  
         self.model = self.load_model(model_path, num_classes)
 
     def load_model(self, model_path, num_classes=4):
         # Use the CustomInceptionV3 class with specified number of classes
-        model = CustomInceptionV3(num_classes=num_classes, aux_logits=True)  # Set aux_logits=False for inference
+        # Set aux_logits=False for inference
+        model = CustomInceptionV3(num_classes=num_classes, aux_logits=True)  
 
-        # Load weights
         model.load_state_dict(torch.load(model_path, map_location=device))
         model = model.to(device)
         model.eval()
@@ -127,14 +126,14 @@ class ImageProcessor(QMainWindow):
     def load_models(self):
         # Load all models
         model_paths = {
-            # 'Eye': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_Trained_models_noBB_with_BB_ZB_images\train_eye_with_ZB_BB_images_noBB\weights\last.pt',
-            # 'Head': r'C:\Users\Pushkar Bansal\Desktop\Behavioral genetics\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Trained_aug_models_noBB\train_aug_head_noBB\weights\last.pt',
-            # 'Head-Yolk Extension': r'C:\Users\Pushkar Bansal\Desktop\Behavioral genetics\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Trained_aug_models_noBB\train_aug_head_yolkext_noBB\weights\last.pt',
-            'Whole Larva':  r"D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_3dpf_models_real_deal\train_whole_larva_3dpf\weights\best.pt",
-            # 'Yolk-extension': r'C:\Users\Pushkar Bansal\Desktop\Behavioral genetics\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Trained_aug_models_noBB\train3_48_params_yolext_noBB\weights\last.pt',
-            # 'Yolkext-tail': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_Trained_models_noBB_with_BB_ZB_images\train_yolkext_tail_with_ZB_BB_images_noBB\weights\last.pt',
-            # 'Yolk-Sac': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Yolov9_V2_WT_MIB_sampled\train_yolk_sac_WT_MIB_samples\weights\last.pt',
-            # 'Pericardium': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_Trained_models_noBB_with_BB_ZB_images\train_pericardium_with_ZB_BB_images_noBB\weights\best.pt'
+            'Eye': \path_to_model
+            'Head': \path_to_model
+            'Head-Yolk Extension': \path_to_model
+            'Whole Larva':  \path_to_model
+            'Yolk-extension': \path_to_model
+            'Yolkext-tail': \path_to_model
+            'Yolk-Sac': \path_to_model
+            'Pericardium': \path_to_model
         }
 
         for class_name, model_path in model_paths.items():
@@ -157,11 +156,9 @@ class ImageProcessor(QMainWindow):
     
         all_contours = {class_name: [] for class_name in self.models.keys()}
     
-        # Create an output directory
         output_directory = os.path.join(folder_path, "processed_images")
         os.makedirs(output_directory, exist_ok=True)
     
-        # Initialize DataFrame with size and anomaly columns for each class
         self.df = pd.DataFrame(columns=["Image"] + [f'{class_name}_Size' for class_name in self.models.keys()] + [f'{class_name}_Anomaly' for class_name in self.models.keys()])
     
         for filename in os.listdir(folder_path):
@@ -174,10 +171,9 @@ class ImageProcessor(QMainWindow):
     
                     self.process_all_classes(image_path, pixel_size, all_contours, output_directory)
     
-        # Compute thresholds based on IQR
         self.thresholds = self.compute_thresholds(all_contours)
     
-        # Process again with thresholds and save results
+        # Process with thresholds and save results
         for filename in os.listdir(folder_path):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tif')):
                 image_path = os.path.join(folder_path, filename)
@@ -224,7 +220,7 @@ class ImageProcessor(QMainWindow):
                 else:
                     contour_sizes[class_name + '_Anomaly'] = 'No Anomaly'
             else:
-                contour_sizes[class_name + '_Anomaly'] = 'No Anomaly'  # Default to 'No Anomaly'
+                contour_sizes[class_name + '_Anomaly'] = 'No Anomaly'  
     
         if include_anomaly:
             if has_anomaly:
@@ -333,7 +329,6 @@ class ImageProcessor(QMainWindow):
 
     
     def display_image(self, image):
-        # Get the dimensions of the window
         window_width = self.label.width()
         window_height = self.label.height()
         
@@ -344,11 +339,11 @@ class ImageProcessor(QMainWindow):
     
         if w > window_width or h > window_height:
             if aspect_ratio > 1:
-                # Image is wider than tall, resize based on width
+               
                 new_width = window_width
                 new_height = int(window_width / aspect_ratio)
             else:
-                # Image is taller than wide, resize based on height
+               
                 new_height = window_height
                 new_width = int(window_height * aspect_ratio)
         else:
@@ -395,7 +390,7 @@ class ImageProcessor(QMainWindow):
         class_name = clicked_button.text()
         self.current_model = self.models[class_name]
 
-# Main Application
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -449,7 +444,7 @@ class ClassificationWindow(QMainWindow):
         scroll_area.setWidget(scroll_content)
         main_layout.addWidget(scroll_area)
         
-        # Create a central widget and set the layout
+        # Central widget and layout
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
@@ -462,7 +457,6 @@ class ClassificationWindow(QMainWindow):
     def make_predictions(self, folder_path):
         classes = ['Wild Type', 'Edema', 'Edema_TailCurl', 'TailCurl']  # Update with your actual class names
         
-        # Clear previous results
         for i in reversed(range(self.results_layout.count())): 
             self.results_layout.itemAt(i).widget().setParent(None)
         
@@ -470,7 +464,7 @@ class ClassificationWindow(QMainWindow):
             if filename.endswith(('.png', '.jpg', '.jpeg')):
                 img_path = os.path.join(folder_path, filename)
                 
-                # Create a horizontal layout for each image-prediction pair
+                # Horizontalal layout for each image-prediction pair
                 hbox = QHBoxLayout()
                 
                 # Load and display the image
@@ -494,10 +488,8 @@ class ClassificationWindow(QMainWindow):
                 pred_label = QLabel(f"File: {filename}\nPredicted: {classes[predicted_class]}\nProbability: {pred_prob:.4f}")
                 hbox.addWidget(pred_label)
                 
-                # Add this image-prediction pair to the results layout
                 self.results_layout.addLayout(hbox)
         
-        # Add a stretch to push all items to the top
         self.results_layout.addStretch()
 
     def classify_image(self, image_path):
@@ -509,8 +501,6 @@ class ClassificationWindow(QMainWindow):
         image = QPixmap(image_path)
         self.label.setPixmap(image.scaled(self.label.size(), Qt.KeepAspectRatio))
         QMessageBox.information(self, 'Prediction', f'Predicted class: {predicted_class} \nConfidence: {confidence:.2f}')
-
-
 
 
 if __name__ == '__main__':
