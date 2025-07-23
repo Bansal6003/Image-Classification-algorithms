@@ -33,7 +33,7 @@ class CustomInceptionV3(nn.Module):
         # Create the InceptionResnetV2 model
         self.inception = timm.create_model('inception_resnet_v2', pretrained=True)
         
-        # Modify the final fully connected layer to output the correct number of classes
+        # Fully connected layer to output the correct number of classes
         self.inception.classif = nn.Linear(self.inception.classif.in_features, num_classes)
 
     def forward(self, x):
@@ -48,7 +48,7 @@ class ModelLoader:
         self.model = self.load_model(model_path, num_classes)
 
     def load_model(self, model_path, num_classes=4):
-        # Use the CustomInceptionV3 class with specified number of classes
+        # CustomInceptionV3 class with specified number of classes
         model = CustomInceptionV3(num_classes=num_classes)  # Set aux_logits=False for inference
 
         # Load weights
@@ -120,14 +120,14 @@ class ImageProcessor(QMainWindow):
     def load_models(self):
         # Load all models
         model_paths = {
-            # 'Eye': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_Trained_models_noBB_with_BB_ZB_images\train_eye_with_ZB_BB_images_noBB\weights\last.pt',
-            # 'Head': r'C:\Users\Pushkar Bansal\Desktop\Behavioral genetics\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Trained_aug_models_noBB\train_aug_head_noBB\weights\last.pt',
-            # 'Head-Yolk Extension': r'C:\Users\Pushkar Bansal\Desktop\Behavioral genetics\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Trained_aug_models_noBB\train_aug_head_yolkext_noBB\weights\last.pt',
-            'Whole Larva':  r"D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_3dpf_models_real_deal\train_whole_larva_3dpf\weights\best.pt",
-            # 'Yolk-extension': r'C:\Users\Pushkar Bansal\Desktop\Behavioral genetics\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Trained_aug_models_noBB\train3_48_params_yolext_noBB\weights\last.pt',
-            # 'Yolkext-tail': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_Trained_models_noBB_with_BB_ZB_images\train_yolkext_tail_with_ZB_BB_images_noBB\weights\last.pt',
-            # 'Yolk-Sac': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Yolov9_V2_WT_MIB_sampled\train_yolk_sac_WT_MIB_samples\weights\last.pt',
-            # 'Pericardium': r'D:\Behavioral genetics_V1\AI_Project_Python_Templates\Annotation for yolo and coco\runs\segment\Collective_Trained_models_noBB_with_BB_ZB_images\train_pericardium_with_ZB_BB_images_noBB\weights\best.pt'
+            'Eye': \path_to_model,
+            'Head': \path_to_model,
+            'Head-Yolk Extension': \path_to_model,
+            'Whole Larva':  \path_to_model,
+            'Yolk-extension': \path_to_model,
+            'Yolkext-tail': \path_to_model,
+            'Yolk-Sac': \path_to_model,
+            'Pericardium': \path_to_model
         }
 
         for class_name, model_path in model_paths.items():
@@ -170,7 +170,7 @@ class ImageProcessor(QMainWindow):
         # Compute thresholds based on IQR
         self.thresholds = self.compute_thresholds(all_contours)
     
-        # Process again with thresholds and save results
+        # Process with thresholds and save results
         for filename in os.listdir(folder_path):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tif')):
                 image_path = os.path.join(folder_path, filename)
@@ -442,7 +442,7 @@ class ClassificationWindow(QMainWindow):
         scroll_area.setWidget(scroll_content)
         main_layout.addWidget(scroll_area)
         
-        # Create a central widget and set the layout
+        # Central widget and layout
         central_widget = QWidget()
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
@@ -455,7 +455,6 @@ class ClassificationWindow(QMainWindow):
     def make_predictions(self, folder_path):
         classes = ['Edema', 'Edema_TailCurl', 'TailCurl', 'Wild Type']  # Update with your actual class names
         
-        # Clear previous results
         for i in reversed(range(self.results_layout.count())): 
             self.results_layout.itemAt(i).widget().setParent(None)
         
@@ -463,7 +462,7 @@ class ClassificationWindow(QMainWindow):
             if filename.endswith(('.png', '.jpg', '.jpeg')):
                 img_path = os.path.join(folder_path, filename)
                 
-                # Create a horizontal layout for each image-prediction pair
+                # Horizontal layout for each image-prediction pair
                 hbox = QHBoxLayout()
                 
                 # Load and display the image
@@ -487,10 +486,8 @@ class ClassificationWindow(QMainWindow):
                 pred_label = QLabel(f"File: {filename}\nPredicted: {classes[predicted_class]}\nProbability: {pred_prob:.4f}")
                 hbox.addWidget(pred_label)
                 
-                # Add this image-prediction pair to the results layout
                 self.results_layout.addLayout(hbox)
         
-        # Add a stretch to push all items to the top
         self.results_layout.addStretch()
 
     def classify_image(self, image_path):
