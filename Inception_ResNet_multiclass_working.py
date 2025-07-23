@@ -20,7 +20,6 @@ import timm
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-# Allow PyTorch to leverage cuDNN for optimization
 torch.backends.cudnn.benchmark = True
 
 # Device configuration
@@ -35,48 +34,42 @@ class CustomInceptionV3(nn.Module):
         # Create the InceptionResnetV2 model
         self.inception = timm.create_model('inception_resnet_v2', pretrained=True)
         
-        # Modify the final fully connected layer to output the correct number of classes
+        # Final fully connected layer to output the correct number of classes
         self.inception.classif = nn.Linear(self.inception.classif.in_features, num_classes)
 
     def forward(self, x):
         return self.inception(x)
 
-# Define the main training process
 def main():
     # Timing the whole code run
     start_time = time.time()
 
-    # Path to the dataset
     train_image_path = r'D:\Behavioral genetics_V1\Metamorph_scans\WT_vs_nonWT_image_Classification\Dataset\MultiClass_Dataset_3dpf\Multiimage_dataset_V4\isolated\output'
 
-    # Define transformations (including grayscale)
+    # Transformations 
     transform = transforms.Compose([
         transforms.Resize((384, 384)),
         transforms.Grayscale(num_output_channels=3),  # Ensure the image is grayscale
         transforms.ToTensor()
     ])
 
-    # Load dataset
     good_dataset = ImageFolder(root=train_image_path, transform=transform)
 
     print("Total number of samples in the original dataset:", len(good_dataset))
 
-    # Define batch size
-    BS = 32  # Larger batch size to fully utilize GPU memory
+    BS = 32  
 
-    # Create the custom model
     model = CustomInceptionV3(num_classes=6)
 
-    # Move the model to GPU
     model = model.to(device)
 
     lr = 0.0001 #0.000001
 
-    # Define loss function and optimizer
+    # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr, weight_decay=1e-4)
 
-    # Use mixed precision training
+    # Mixed precision training
     scaler = torch.cuda.amp.GradScaler()
 
     # Early stopping parameters
@@ -84,13 +77,13 @@ def main():
     patience = 20  # How many epochs to wait before stopping when no improvement
     patience_counter = 0  # Counter to track number of epochs without improvement
 
-    # Lists to track loss for plotting
+    # Tracking loss for plotting
     Loss = []
     Validation_Loss = []
     all_preds = []
     all_labels = []
 
-    # Number of epochs to train
+
     num_epochs = 300
 
     # Initialize MLflow and start the experiment
@@ -152,12 +145,9 @@ def main():
             
                     with torch.cuda.amp.autocast():
                         output = model(img)
-                         # Extract the main output for loss computation
                         loss = criterion(output, label)
-                      # Ensure label is compatible with output shape
-                        preds.append(torch.argmax(output, dim=1).cpu().numpy())  # Take argmax for class predictions
+                        preds.append(torch.argmax(output, dim=1).cpu().numpy())  
                         labels.append(label.cpu().numpy())
-
 
                     val_loss += loss.item()
 
@@ -166,30 +156,30 @@ def main():
 
             Validation_Loss.append(val_loss / len(test_loader.dataset))
 
-            # Log training and validation loss to MLflow
+            # Logging training and validation loss to MLflow
             mlflow.log_metric("train_loss", train_loss / len(train_loader.dataset), step=epoch)
             mlflow.log_metric("validation_loss", val_loss / len(test_loader.dataset), step=epoch)
 
-            # Print losses for this epoch
+            # Print losses for epochs
             if epoch % 1 == 0:
                 print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {train_loss / len(train_loader.dataset):.4f}, Validation Loss: {val_loss / len(test_loader.dataset):.4f}')
 
             # Early stopping logic
-            min_delta = 1e-4  # Minimum improvement threshold
+            min_delta = 1e-4 
             if (best_val_loss - val_loss) > min_delta:
                 best_val_loss = val_loss
-                patience_counter = 0 # Reset patience counter
-                # Log the model as an artifact
+                patience_counter = 0
+                # Logging the model as an artifact
                 model_save_path = r'D:\Behavioral genetics_V1\Metamorph_scans\WT_vs_nonWT_image_Classification\Dataset\MultiClass_Dataset_3dpf\Multiimage_dataset_V4\Inception_ResNet_V11_isolated_images_6_classes.pt'
                 torch.save(model.state_dict(), model_save_path)
                 mlflow.log_artifact(model_save_path)
             else:
-                patience_counter += 1  # Increment patience counter
+                patience_counter += 1 
                 if patience_counter >= patience:
                     print(f"Early stopping at epoch {epoch+1}")
-                    break  # Stop training if patience is exceeded
+                    break  
 
-    # Plot training and validation losses
+    # Plotting training and validation losses
     plt.plot(Loss, label='Training Loss')
     plt.plot(Validation_Loss, label='Validation Loss')
     plt.xlabel('Epoch')
@@ -197,7 +187,7 @@ def main():
     plt.legend()
     plt.savefig("loss_plot.png")
 
-    # Log the loss plot as an artifact in MLflow
+    # Logging the loss plot as an artifact in MLflow
     mlflow.log_artifact("loss_plot.png")
 
     # Classification report and confusion matrix
@@ -231,7 +221,5 @@ def main():
     # End the MLflow run
 mlflow.end_run()
 
-
-# Safe entry point for Windows and other environments
 if __name__ == '__main__':
     main()
